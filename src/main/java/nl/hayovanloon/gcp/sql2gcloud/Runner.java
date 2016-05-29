@@ -11,6 +11,7 @@ import rx.Subscriber;
 import rx.Subscription;
 import rx.observables.ConnectableObservable;
 
+import java.lang.management.ManagementFactory;
 import java.io.File;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -34,19 +35,23 @@ public class Runner {
           "(\\s+-c\\s+(?<conf>[^\\s]+))" +
           "|(\\s+-d\\s+(?<database>jdbc:[^\\s]+))" +
           "|(\\s+-u\\s+(?<user>[^\\s]+))" +
-          "|(\\s+-p\\s+'(?<password>[^']+)')" +
+          "|(\\s+-p\\s+\"(?<password>[^\"]+)\")" +
           "|(\\s+-s\\s+'(?<separator>[^']+)'))+" +
+          "|(\\s+-dr\\s+(?<driver>[^\\s]+))" +
           "(\\s+gs://(?<bucket>[a-z0-9-_.]{3,63})/(?<file>[^\\s]+))?" +
           "(\\s+(?<query>.+))?");
   private static final String HELP =
       "Usage:" +
-          "\n  sql2gcloud [-c <config>] [-d <database>] [-u <user>] [-p '<password>'] [-s '<separator>'] [<dest_url>] [<query>]" +
+          "\n  sql2gcloud [-c <config>] [-d jdbc:<database>] [-u <user>] [-p '<password>'] [-s '<separator>']" +
+          "                 [-dr <jdbc driver>] [<dest_url>] [<query>]" +
           "\n" +
-          "\nExample:" +
-          "\n  sql2gcloud -c conf/config.json gs://foo/bar/bla.txt SELECT * FROM foo" +
+          "\nExamples:" +
+          "\n  sql2gcloud -c conf/config.json gs://foo/bar/bla.txt SELECT \\* FROM foo" +
+          "\n  sql2gcloud -c conf/config.json -u myuser -p \\\"mypass\\\" gs://foo/bar/bla.txt SELECT \\* FROM foo" +
           "\n" +
           "\nConfig file format (JSON):" +
           "\n{" +
+          "\n  \"driver\": \"com.mysql.jdbc.Driver\"," +
           "\n  \"database\": \"jdbc:mysql://127.0.0.1:3306/my_database\"," +
           "\n  \"user\": \"my_user\"," +
           "\n  \"password\": \"my_password\"," +
@@ -74,12 +79,21 @@ public class Runner {
       System.exit(1);
     }
 
-    // Register MySQL driver
-    try {
-      Class.forName("com.mysql.jdbc.Driver").newInstance();
-    } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-      System.err.println("exception while registering MySQL driver: " + e);
-      System.exit(1);
+    // Register JDBC driver if provided
+    config.getDriver().forEach(driver -> {
+      try {
+        Class.forName(driver).newInstance();
+      } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+        System.err.println("exception while registering JDBC driver: " + e);
+        System.exit(1);
+      }
+    });
+
+    if (config.getDriver().isEmpty()) {
+      final List<String> jvmArgs = ManagementFactory.getRuntimeMXBean().getInputArguments();
+      if (!jvmArgs.stream().anyMatch(x -> x.startsWith("-Djdbc.drivers"))) {
+        LOG.warn("No JDBC driver specified and could not detect one in JVM parameters.");
+      }
     }
 
     Option<Subscription> subscription = Option.none();
@@ -118,6 +132,7 @@ public class Runner {
     } else {
       // prefix whitespace is added to keep regex simple
       final String paramString = " " + StringUtils.join(args, " ");
+      for (String argh: args) System.out.println(argh);
       final Matcher m = PARAMS_PATTERN.matcher(paramString);
 
       if (m.find()) {
@@ -132,6 +147,7 @@ public class Runner {
               }
             });
 
+        option(m.group("driver")).forEach(config::setDriver);
         option(m.group("database")).forEach(config::setDatabase);
         option(m.group("user")).forEach(config::setUser);
         option(m.group("password")).forEach(config::setPassword);
@@ -140,6 +156,7 @@ public class Runner {
         option(m.group("separator")).forEach(config::setSeparator);
         option(m.group("query")).forEach(config::setQuery);
 
+        System.out.println(config);
         return config;
       } else return new Config();
     }
@@ -176,6 +193,7 @@ public class Runner {
   private static class Config {
     private static final String DEFAULT_SEPARATOR = "~~";
 
+    private Option<String> driver = Option.none();
     private String database;
     private String user;
     private String password;
@@ -201,6 +219,14 @@ public class Runner {
       else if (!query.startsWith("SELECT")) errors.add("Query must start with 'SELECT'");
 
       return errors.build();
+    }
+
+    Option<String> getDriver() {
+      return driver;
+    }
+
+    public void setDriver(String driver) {
+      this.driver = Option.some(driver);
     }
 
     String getDatabase() {
@@ -257,6 +283,20 @@ public class Runner {
 
     void setQuery(String query) {
       this.query = query;
+    }
+
+    @Override
+    public String toString() {
+      return "Config{" +
+          "driver=" + driver +
+          ", database='" + database + '\'' +
+          ", user='" + user + '\'' +
+          ", password='" + password + '\'' +
+          ", bucket='" + bucket + '\'' +
+          ", file='" + file + '\'' +
+          ", separator='" + separator + '\'' +
+          ", query='" + query + '\'' +
+          '}';
     }
   }
 }
