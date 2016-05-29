@@ -11,7 +11,6 @@ import rx.Subscriber;
 import rx.Subscription;
 import rx.observables.ConnectableObservable;
 
-import javax.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -128,8 +127,8 @@ public class Runner {
               try {
                 return new ObjectMapper().readValue(new File(conf), Config.class);
               } catch (IOException e) {
-                System.err.println("Error reading configuration file " + conf);
-                throw new RuntimeException(e);
+                LOG.warn("Error reading configuration file {}, using empty as base.", conf);
+                return new Config();
               }
             });
 
