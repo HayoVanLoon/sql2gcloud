@@ -25,8 +25,8 @@ public class GFSSubscriber extends Subscriber<List<String>> {
 
   private static final Logger LOG = LogManager.getLogger(GFSSubscriber.class);
 
-  private static final List<Acl> ACLS = ImmutableList.of(Acl.of(Acl.User.ofAllAuthenticatedUsers(),
-      Acl.Role.READER));
+  // For now, always use default bucket ACLS
+  private static final List<Acl> ACLS = ImmutableList.of();
 
   private final Connection connection;
   private final WriteChannel channel;
