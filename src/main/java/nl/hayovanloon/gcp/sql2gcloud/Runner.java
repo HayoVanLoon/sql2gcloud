@@ -65,14 +65,6 @@ public class Runner {
   private static final String MISSING_PARAM = "either include it in the config or pass it as a parameter";
 
   public static void main(String[] args) throws IOException {
-    // Register MySQL driver
-    try {
-      Class.forName("com.mysql.jdbc.Driver").newInstance();
-    } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-      System.err.println("exception while registering MySQL driver: " + e);
-      System.exit(2);
-    }
-
     final Config config = parseArgs(args);
     final List<String> configErrors = config.validate();
     if (!configErrors.isEmpty()) {
@@ -80,6 +72,14 @@ public class Runner {
       configErrors.forEach(error -> System.err.println("  " + error));
       System.err.println("Operation aborted.");
       System.err.println("\nRun without command line arguments to display help.");
+      System.exit(1);
+    }
+
+    // Register MySQL driver
+    try {
+      Class.forName("com.mysql.jdbc.Driver").newInstance();
+    } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+      System.err.println("exception while registering MySQL driver: " + e);
       System.exit(1);
     }
 
@@ -100,6 +100,16 @@ public class Runner {
     }
   }
 
+  /**
+   * Parses command line arguments and creates a Config object.
+   *
+   * The (optionally provided) config json provides the base. Its values are
+   * overwritten with values provided on the command line. In the end, all
+   * fields (except separator, which defaults to "~~") need to be set.
+   *
+   * @param args  command line argument list
+   * @return  a new Config object
+   */
   private static Config parseArgs(String[] args) {
 
     if (args.length == 0 || "help".equals(args[0]) || "-h".equals(args[0])) {
@@ -165,12 +175,14 @@ public class Runner {
   }
 
   private static class Config {
+    private static final String DEFAULT_SEPARATOR = "~~";
+
     private String database;
     private String user;
     private String password;
     private String bucket;
     private String file;
-    private String separator = "~~";
+    private String separator = DEFAULT_SEPARATOR;
     private String query;
 
     Config() {}
@@ -182,6 +194,9 @@ public class Runner {
       if (password == null) errors.add("No password specified; " + MISSING_PARAM);
       if (bucket == null) errors.add("No bucket specified; " + MISSING_PARAM);
       if (file == null) errors.add("No file specified; " + MISSING_PARAM);
+
+      if (separator == null) separator = DEFAULT_SEPARATOR;
+      else if (separator.isEmpty()) LOG.info("Column separator is empty");
 
       if (query == null) errors.add("No query specified; " + MISSING_PARAM);
       else if (!query.startsWith("SELECT")) errors.add("Query must start with 'SELECT'");
@@ -233,7 +248,7 @@ public class Runner {
       return separator;
     }
 
-    void setSeparator(@Nonnull String separator) {
+    void setSeparator(String separator) {
       this.separator = separator;
     }
 

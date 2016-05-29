@@ -50,6 +50,15 @@ public class GFSSubscriber extends Subscriber<List<String>> {
     super.onStart();
   }
 
+  /**
+   * Factor method for GFSSubscribers.
+   *
+   * @param connection  database connection
+   * @param bucket      name of bucket to write to
+   * @param fileName    name of file to write to
+   * @param separator   column separating string
+   * @return  a new GFSSubscriber
+   */
   static GFSSubscriber of(Connection connection, String bucket, String fileName, String separator) {
     final Storage storage = StorageOptions.defaultInstance().service();
     final BlobInfo blobInfo = BlobInfo.builder(bucket, fileName).acl(ACLS).build();
@@ -82,6 +91,9 @@ public class GFSSubscriber extends Subscriber<List<String>> {
     closeConnections();
   }
 
+  /**
+   * Closes WriteChannel and database connection
+   */
   private void closeConnections() {
     try {
       channel.close();
@@ -109,6 +121,9 @@ public class GFSSubscriber extends Subscriber<List<String>> {
     }
   }
 
+  /**
+   * Increment counter for successful writes
+   */
   private synchronized void inc() {
     counter += 1;
   }
@@ -117,6 +132,9 @@ public class GFSSubscriber extends Subscriber<List<String>> {
     return counter;
   }
 
+  /**
+   * Increment counter for unsuccessful writes
+   */
   private synchronized void incErrors() {
     errors += 1;
   }
