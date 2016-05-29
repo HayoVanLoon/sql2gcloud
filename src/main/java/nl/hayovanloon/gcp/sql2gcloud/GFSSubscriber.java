@@ -100,7 +100,7 @@ public class GFSSubscriber extends Subscriber<List<String>> {
       connection.close();
     } catch (SQLException | IOException e) {
       LOG.error("Exception while closing connections/channels (possible loss of data): {}", e);
-      System.exit(1);
+      System.exit(2);
     }
   }
 
