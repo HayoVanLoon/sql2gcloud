@@ -33,16 +33,16 @@ public class Runner {
   private static final Pattern PARAMS_PATTERN = Pattern.compile(
       "(" +
           "(\\s+-c\\s+(?<conf>[^\\s]+))" +
+          "|(\\s+-dr\\s+(?<driver>[^\\s]+))" +
           "|(\\s+-d\\s+(?<database>jdbc:[^\\s]+))" +
           "|(\\s+-u\\s+(?<user>[^\\s]+))" +
           "|(\\s+-p\\s+\"(?<password>[^\"]+)\")" +
-          "|(\\s+-s\\s+'(?<separator>[^']+)'))+" +
-          "|(\\s+-dr\\s+(?<driver>[^\\s]+))" +
+          "|(\\s+-s\\s+\"(?<separator>[^\"]+)\"))+" +
           "(\\s+gs://(?<bucket>[a-z0-9-_.]{3,63})/(?<file>[^\\s]+))?" +
           "(\\s+(?<query>.+))?");
   private static final String HELP =
       "Usage:" +
-          "\n  sql2gcloud [-c <config>] [-d jdbc:<database>] [-u <user>] [-p '<password>'] [-s '<separator>']" +
+          "\n  sql2gcloud [-c <config>] [-d jdbc:<database>] [-u <user>] [-p \"<password>\"] [-s \"<separator>\"]" +
           "                 [-dr <jdbc driver>] [<dest_url>] [<query>]" +
           "\n" +
           "\nExamples:" +
