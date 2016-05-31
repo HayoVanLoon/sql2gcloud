@@ -132,7 +132,7 @@ public class Runner {
     } else {
       // prefix whitespace is added to keep regex simple
       final String paramString = " " + StringUtils.join(args, " ");
-      for (String argh: args) System.out.println(argh);
+
       final Matcher m = PARAMS_PATTERN.matcher(paramString);
 
       if (m.find()) {
