@@ -15,8 +15,6 @@ import rx.Subscriber;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -28,7 +26,6 @@ public class GFSSubscriber extends Subscriber<List<String>> {
   // For now, always use default bucket ACLS
   private static final List<Acl> ACLS = ImmutableList.of();
 
-  private final Connection connection;
   private final WriteChannel channel;
   private final String separator;
   private final Pattern sepRegex;
@@ -37,8 +34,7 @@ public class GFSSubscriber extends Subscriber<List<String>> {
   private long counter; // synchronised
   private long errors;  // synchronised
 
-  private GFSSubscriber(Connection connection, WriteChannel channel, String separator, Pattern sepRegex) {
-    this.connection = connection;
+  private GFSSubscriber(WriteChannel channel, String separator, Pattern sepRegex) {
     this.channel = channel;
     this.separator = separator;
     this.sepRegex = sepRegex;
@@ -53,13 +49,12 @@ public class GFSSubscriber extends Subscriber<List<String>> {
   /**
    * Factor method for GFSSubscribers.
    *
-   * @param connection  database connection
    * @param bucket      name of bucket to write to
    * @param fileName    name of file to write to
    * @param separator   column separating string
    * @return  a new GFSSubscriber
    */
-  static GFSSubscriber of(Connection connection, String bucket, String fileName, String separator) {
+  static GFSSubscriber of(String bucket, String fileName, String separator) {
     final Storage storage = StorageOptions.defaultInstance().service();
     final BlobInfo blobInfo = BlobInfo.builder(bucket, fileName).acl(ACLS).build();
 
@@ -67,12 +62,12 @@ public class GFSSubscriber extends Subscriber<List<String>> {
         () -> storage.create(blobInfo).writer(),
         blob -> blob.writer());
     final Pattern sepRegex = Pattern.compile(Pattern.quote(separator));
-    return new GFSSubscriber(connection, channel, separator, sepRegex);
+    return new GFSSubscriber(channel, separator, sepRegex);
   }
 
   @Override
   public void onCompleted() {
-    closeConnections();
+    closeChannel();
 
     final long num = getCounter();
     final long duration = (System.currentTimeMillis() - start);
@@ -88,17 +83,16 @@ public class GFSSubscriber extends Subscriber<List<String>> {
   @Override
   public void onError(Throwable t) {
     LOG.warn("Exception while reading: {}", t);
-    closeConnections();
+    closeChannel();
   }
 
   /**
    * Closes WriteChannel and database connection
    */
-  private void closeConnections() {
+  private void closeChannel() {
     try {
       channel.close();
-      connection.close();
-    } catch (SQLException | IOException e) {
+    } catch (IOException e) {
       LOG.error("Exception while closing connections/channels (possible loss of data): {}", e);
       System.exit(2);
     }

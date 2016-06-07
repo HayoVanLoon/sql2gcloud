@@ -1,9 +1,7 @@
 package nl.hayovanloon.gcp.sql2gcloud;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import io.atlassian.fugue.Option;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import rx.Observable;
@@ -11,9 +9,8 @@ import rx.Subscriber;
 import rx.Subscription;
 import rx.observables.ConnectableObservable;
 
-import java.lang.management.ManagementFactory;
-import java.io.File;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.security.GeneralSecurityException;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -21,10 +18,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static io.atlassian.fugue.Option.option;
 
 
 public class Runner {
@@ -63,7 +56,7 @@ public class Runner {
     try(Connection connection = DriverManager.getConnection(config.getDatabase(), config.getUser(),
         config.getPassword())) {
       final Observable<List<String>> observable = getObservable(connection, config.getQuery());
-      final Subscriber<List<String>> subscriber = GFSSubscriber.of(connection, config.getBucket(),
+      final Subscriber<List<String>> subscriber = GFSSubscriber.of(config.getBucket(),
           config.getFile(), config.getSeparator());
 
       subscription = Option.some(observable.subscribe(subscriber));
@@ -96,8 +89,14 @@ public class Runner {
               }
               LOG.info("Done reading");
               subscriber.onCompleted();
+              connection.close();
             } catch (SQLException e) {
               subscriber.onError(e);
+              try {
+                connection.close();
+              } catch (SQLException e1) {
+                LOG.warn("Exception while closing connection: {}", e1);
+              }
             }
           }
         }
