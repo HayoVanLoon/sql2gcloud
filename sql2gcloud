@@ -1,1 +1,11 @@
-java -cp "*" nl.hayovanloon.gcp.sql2gcloud.Runner $@
+# Points to location in target folder, adjust on installation:
+JAR_DIR="./target/scala-2.11"
+
+# Points to location in target folder, adjust on installation:
+LOG_CONF="./target/scala-2.11/classes/log4j2.xml"
+
+if [[ -z "$LOG_CONF" ]]; then
+    java -Dlog4j.configurationFile="$LOG_CONF" -cp "*" nl.hayovanloon.gcp.sql2gcloud.Runner $@
+else
+    java -cp "*" nl.hayovanloon.gcp.sql2gcloud.Runner $@
+fi

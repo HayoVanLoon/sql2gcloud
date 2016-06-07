@@ -1,26 +1,56 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration xmlns="http://logging.apache.org/log4j/2.0/config">
 
+    <Properties>
+        <Property name="LOG_DIR">./</Property>
+    </Properties>
+
     <Appenders>
-        <File name="FILE" fileName="logfile.log" append="true">
+        <RollingFile name="FILE_INFO" fileName="${LOG_DIR}info.log" filePattern="${LOG_DIR}archive/info-%d{yyyy-MM-
+dd}.log">
+            <Policies>
+                <TimeBasedTriggeringPolicy />
+            </Policies>
             <PatternLayout pattern="%level %d %C{1.} (%F:%L) - %m%n"/>
-        </File>
+        </RollingFile>
+
+        <RollingFile name="FILE_WARN" fileName="${LOG_DIR}warn.log" filePattern="${LOG_DIR}archive/warn-%d{yyyy-MM-
+dd}.log" append="true">
+            <Policies>
+                <TimeBasedTriggeringPolicy />
+            </Policies>
+            <PatternLayout pattern="%level %d %C{1.} (%F:%L) - %m%n"/>
+        </RollingFile>
+
+        <RollingFile name="FILE_ERROR" fileName="${LOG_DIR}error.log" filePattern="${LOG_DIR}archive/error-%d{yyyy-
+MM-dd}.log" append="true">
+            <Policies>
+                <TimeBasedTriggeringPolicy />
+            </Policies>
+            <PatternLayout pattern="%level %d %C{1.} (%F:%L) - %m%n"/>
+        </RollingFile>
+
         <Console name="STDOUT" target="SYSTEM_OUT">
             <PatternLayout pattern="%level %d %C{1.} (%F:%L) - %m%n"/>
         </Console>
+
+        <Async name="Async">
+            <AppenderRef ref="FILE_INFO"/>
+        </Async>
+        <Async name="Async">
+            <AppenderRef ref="FILE_WARN"/>
+        </Async>
+        <Async name="Async">
+            <AppenderRef ref="FILE_ERROR"/>
+        </Async>
     </Appenders>
 
     <Loggers>
-        <Logger name="nl.hayovanloon.gcp" level="debug"/>
-
-        <Root level="debug" includeLocation="true">
-            <AppenderRef ref="STDOUT"/>
-            <AppenderRef ref="FILE"/>
-        </Root>
-
         <Root level="info" includeLocation="true">
-            <AppenderRef ref="STDOUT"/>
-            <AppenderRef ref="FILE"/>
+            <AppenderRef ref="STDOUT" level="DEBUG"/>
+            <AppenderRef ref="FILE_INFO" level="INFO"/>
+            <AppenderRef ref="FILE_WARN" level="WARN"/>
+            <AppenderRef ref="FILE_ERROR" level="ERROR"/>
         </Root>
     </Loggers>
 
