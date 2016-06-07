@@ -12,8 +12,9 @@ Some notes:
 * As writing occurs while iterating over the result set, memory usage should not be too dependent on table size. (to be tested)
 
 ### Example
-The following will 
-`sql2gcloud -d jdbc:mysql://127.0.0.1/bar -u myuser -p \"mypass\" -separator \"~~\" -dr com.mysql.jdbc.Driver gs://mybucket/some_file.txt SELECT \* FROM foo;`
+The following will place the contents of the table 'foo' into 'some_file.txt'.
+
+```sql2gcloud -d jdbc:mysql://127.0.0.1/bar -u myuser -p \"mypass\" -separator \"~~\" -dr com.mysql.jdbc.Driver gs://mybucket/some_file.txt SELECT \* FROM foo;```
 
 ## Configuration file
 The command line can be shortened by using a configuration file. Values provided in this file need not be provided on the command line. Do note that the values provided in the file will be overwritten by their command line counterparts (if provided).
@@ -25,14 +26,18 @@ The command line can be shortened by using a configuration file. Values provided
   "user": "my_user",
   "password": "my_password",
   "bucket": "foo",
-  "file": "bar/bla.txt",
+  "file": "bla/some_file.txt",
   "separator": "~~",
   "query": "SELECT * FROM foo;"
 }
 ```
 
 ### Example (with configuration file)
-`sql2gcloud -c config.json -u myuser -p \"mypass\" gs://mybucket/some_file.txt SELECT \* FROM foo;`
+Command line complexity can be minimised considerably using configuration files.
+
+```sql2gcloud -c config.json -u myuser -p \"mypass\"```
 
 ## Running it
-The project uses SBT (simple build tool) for building (for more info: [http://www.scala-sbt.org]).
+Written in Java 8, you will need a recent JVM runtime.
+
+SBT (simple build tool) is used for building (for more info: [http://www.scala-sbt.org]). `sbt assembly` will generate the jar. The bash scripts `sql2gcloud` and `sql2gcloud.sh` are provided for convenience.
