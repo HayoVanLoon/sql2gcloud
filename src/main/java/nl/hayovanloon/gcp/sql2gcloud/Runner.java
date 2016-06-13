@@ -24,6 +24,8 @@ public class Runner {
 
   private static final Logger LOG = LogManager.getLogger(Runner.class);
 
+  private final Config config;
+
   public static void main(String[] args) throws IOException {
     final Config config = Config.parseArgs(args);
     final List<String> configErrors = config.validate();
@@ -35,6 +37,19 @@ public class Runner {
       System.exit(1);
     }
 
+    Runner r = Runner.with(config);
+    r.run(config);
+  }
+
+  private Runner(Config config) {
+    this.config = config;
+  }
+
+  public static Runner with(Config config) {
+    return new Runner(config);
+  }
+
+  public void run(Config config) {
     // Register JDBC driver if provided
     config.getDriver().forEach(driver -> {
       try {
